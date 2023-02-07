@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -93,7 +94,7 @@ func tokenErr(w http.ResponseWriter, typ, description string, statusCode int) er
 	return nil
 }
 
-//nolint
+// nolint
 const (
 	errInvalidRequest          = "invalid_request"
 	errUnauthorizedClient      = "unauthorized_client"
@@ -189,6 +190,8 @@ func signatureAlgorithm(jwk *jose.JSONWebKey) (alg jose.SignatureAlgorithm, err 
 		default:
 			return alg, errors.New("unsupported ecdsa curve")
 		}
+	case *ed25519.PrivateKey:
+		return jose.EdDSA, nil
 	default:
 		return alg, fmt.Errorf("unsupported signing key type %T", key)
 	}
@@ -223,6 +226,7 @@ var hashForSigAlg = map[jose.SignatureAlgorithm]func() hash.Hash{
 	jose.ES256: sha256.New,
 	jose.ES384: sha512.New384,
 	jose.ES512: sha512.New,
+	jose.EdDSA: sha512.New,
 }
 
 // Compute an at_hash from a raw access token and a signature algorithm
